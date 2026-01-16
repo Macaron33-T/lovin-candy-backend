@@ -1,14 +1,13 @@
-import Cart from "./cart.model.js";
-import CartItem from "../cart_item/cart_item.model.js";
-import Product from "../product/product.model.js";
+import { Cart } from "./cart.model.js";
+import { Product } from "../product/product.model.js";
 
 export const addItemToCart = async (req, res) => {
   try {
-    const userId = req.user.id; // มาจาก auth middleware
-    const { productId, quantity } = req.body;
+    const { productId, quantity = 1 } = req.body;
+    const userId = req.user?.id || null; // login → มีค่า / guest → null
 
-    if (!productId || !quantity) {
-      return res.status(400).json({ message: "Missing data" });
+    if (!productId) {
+      return res.status(400).json({ message: "productId is required" });
     }
 
     const product = await Product.findById(productId);
@@ -16,20 +15,43 @@ export const addItemToCart = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    let cart = await Cart.findOne({ userId, status: "active" });
+    // 🔑 cart ของ user (หรือ guest = user:null)
+    let cart = await Cart.findOne({ user: userId });
+
     if (!cart) {
-      cart = await Cart.create({ userId, status: "active" });
+      cart = await Cart.create({
+        user: userId,
+        items: [],
+        totalPrice: 0,
+      });
     }
 
-    const cartItem = await CartItem.create({
-      cartId: cart._id,
-      productId,
-      quantity,
-      price: product.price,
-    });
+    const existingItem = cart.items.find(
+      (item) => item.product.toString() === productId
+    );
 
-    res.status(201).json(cartItem);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    if (existingItem) {
+      existingItem.quantity += quantity;
+    } else {
+      cart.items.push({
+        product: productId,
+        quantity,
+        price: product.price,
+      });
+    }
+
+    cart.totalPrice = cart.items.reduce(
+      (sum, item) => sum + item.quantity * item.price,
+      0
+    );
+
+    await cart.save();
+
+    return res.status(200).json({
+      success: true,
+      data: cart,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };

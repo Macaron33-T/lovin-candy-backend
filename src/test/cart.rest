@@ -1,0 +1,22 @@
+### Guest Cart
+POST http://localhost:3000/api/cart/items
+Content-Type: application/json
+
+{
+  "productId": "696897940f34cb9f5d50c48f",
+  "price": 25,
+  "quantity": 2
+}
+
+
+### Login user cart
+POST http://localhost:3000/api/cart/items/me
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjhhNWEyN2RjOTBhMzU3YzM1Y2ZiOSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzY4NTkyODYyLCJleHAiOjE3NjkxOTc2NjJ9.YihpsXTcFrhvedVdGROaYWoSzfrxAUNijGooIoiziJ4
+
+{
+  "productId": "696897940f34cb9f5d50c48f",
+  "price": 25,
+  "quantity": 2
+}
+

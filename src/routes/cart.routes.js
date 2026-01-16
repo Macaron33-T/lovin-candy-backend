@@ -1,9 +1,15 @@
-import express from "express";
+import { Router } from "express";
 import { addItemToCart } from "../modules/cart/cart.controller.js";
-import auth from "../middlewares/auth.js";
+import { auth } from "../middlewares/auth.middleware.js";
 
-const router = express.Router();
+const router = Router();
 
-router.post("/items", auth, addItemToCart);
+// guest
+router.post("/items", addItemToCart);
+
+// login
+router.post("/items/me", auth, addItemToCart);
 
 export default router;
+
+
