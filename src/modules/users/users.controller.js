@@ -1,4 +1,8 @@
+import jwt from "jsonwebtoken";
 import { User } from "./users.model.js"
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+
 
 export const getUsers = async (req, res, next) => {
   try {
@@ -52,3 +56,102 @@ export const delAddress = async (req, res, next) => {
     next(error);
   }
 }
+export const updateAddress = async (req, res, next) => {
+  const { id } = req.params;
+  const { address } = req.body;
+
+  try {
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user id",
+      });
+    }
+
+  
+    const trimmed = String(address || "").trim();
+    if (!trimmed) {
+      return res.status(400).json({
+        success: false,
+        message: "address is required",
+      });
+    }
+
+    
+    const updated = await User.findByIdAndUpdate(
+      id,
+      { address: trimmed },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: updated,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//  LOGIN
+export const login = async (req, res, next) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "email and password are required",
+    });
+  }
+
+  try {
+    // สำคัญมาก: password ถูกซ่อน select:false
+    const user = await User.findOne({ email }).select("+password");
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

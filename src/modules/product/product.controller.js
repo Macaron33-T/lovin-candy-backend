@@ -1,4 +1,5 @@
 import { Product } from "./product.model.js";
+import mongoose from "mongoose";
 
 export const getProductId = async (req, res, next) => {
   const { id } = req.params;
@@ -20,3 +21,92 @@ export const getProductId = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const getProducts = async (req, res, next) => {
+  try {
+    const page = Math.max(1, Number(req.query.page || 1));
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit || 10)));
+
+    const q = (req.query.q || "").trim();
+    const category_id = (req.query.category_id || "").trim();
+
+    const filter = {};
+    if (q) filter.name = { $regex: q, $options: "i" };
+    if (category_id && mongoose.isValidObjectId(category_id)) {
+      filter.category_id = category_id;
+    }
+
+    const [data, total] = await Promise.all([
+      Product.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Product.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: "Invalid product id" });
+    }
+
+    const doc = await Product.findByIdAndDelete(id);
+    if (!doc) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    return res.status(200).json({ success: true, message: "Product deleted" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const createProduct = async (req, res, next) => {
+  try {
+    const {
+      name,
+      description,
+      price,
+      stock,
+      category,
+      images,
+    } = req.body;
+
+    // validation
+    if (!name || price === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "name and price are required",
+      });
+    }
+
+    const product = await Product.create({
+      name,
+      description,
+      price,
+      stock,
+      category: category ?? "GENERAL", // ⭐ default ทาง logic
+      images,
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: product,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
