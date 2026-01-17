@@ -26,3 +26,29 @@ export const createUser = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const delAddress = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const updateUser = await User.findByIdAndUpdate(
+      id,
+      { $set: {address: ""} },
+      { new: true }
+    )
+
+    if (!updateUser) {
+      const error = new Error("User not found");
+      error.status = 404;
+      return next(error);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Address deleted successfully",
+      data: updateUser
+    })
+  } catch (error) {
+    next(error);
+  }
+}
