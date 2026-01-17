@@ -3,8 +3,8 @@ POST http://localhost:3000/api/products
 Content-Type: application/json
 
 {
-  "name": "Test Chocolate Candy",
-  "price": 25,
+  "name": "Test Chocolate Jelly",
+  "price": 125,
   "stock": 100,
-  "category": "Candy"
+  "category": "Jelly"
 }
