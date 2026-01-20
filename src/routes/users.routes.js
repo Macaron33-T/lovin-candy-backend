@@ -28,5 +28,3 @@ router.post("/address", auth, createAddress);
 router.put("/address", auth, updateAddress);
 
 router.delete("/address", auth, delAddress);
-
-
