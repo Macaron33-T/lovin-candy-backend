@@ -8,7 +8,11 @@ export const updateCart = async (req, res, next) => {
   const body = req.body;
 
   try {
-    const update = await Cart.findOneAndUpdate(id, body);
+    const update = await Cart.findOneAndUpdate(
+      id, 
+      body,
+      { new: true }
+    );
 
     if (!update) {
       const error = new Error("Item not found...");
